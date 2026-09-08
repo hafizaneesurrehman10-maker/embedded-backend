@@ -10,18 +10,21 @@ import meta_client
 
 router = APIRouter(prefix="/api/whatsapp", tags=["whatsapp"])
 
-
 @router.post("/exchange-code")
 async def exchange_code(payload: ExchangeCodeRequest, db: AsyncSession = Depends(get_db)):
     access_token = await meta_client.get_access_token(payload.code)
 
-    pin = generate_pin()
+    pin = "000000"
 
-    register_result = await meta_client.register_phone_number(
-        phone_number_id=payload.phone_number_id,
-        access_token=access_token,
-        pin=pin,
-    )
+    # Registration may fail if the number is already registered — don't let that block onboarding
+    try:
+        register_result = await meta_client.register_phone_number(
+            phone_number_id=payload.phone_number_id,
+            access_token=access_token,
+            pin=pin,
+        )
+    except HTTPException as e:
+        register_result = {"skipped": True, "reason": e.detail}
 
     subscribe_result = await meta_client.subscribe_app_to_waba(
         waba_id=payload.waba_id,
