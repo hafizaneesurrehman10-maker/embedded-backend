@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+WEBHOOK_VERIFY_TOKEN = os.getenv("WEBHOOK_VERIFY_TOKEN")
 META_APP_ID = os.getenv("META_APP_ID")
 META_APP_SECRET = os.getenv("META_APP_SECRET")
 SYSTEM_USER_TOKEN = os.getenv("SYSTEM_USER_TOKEN")
