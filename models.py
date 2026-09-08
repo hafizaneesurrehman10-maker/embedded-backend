@@ -8,8 +8,6 @@ class WhatsAppCustomer(Base):
     id = Column(Integer, primary_key=True, index=True)
     waba_id = Column(String, unique=True, index=True, nullable=False)
     phone_number_id = Column(String, nullable=False)
-    access_token = Column(String, nullable=False)
-    token_expires_at = Column(DateTime(timezone=True), nullable=True)
     pin_code = Column(String, nullable=False)
     business_name = Column(String, nullable=True)
     status = Column(String, default="active")
