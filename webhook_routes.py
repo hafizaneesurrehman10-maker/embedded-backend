@@ -48,7 +48,7 @@ async def receive_webhook(request: Request, db: AsyncSession = Depends(get_db)):
 
     # Forward the raw payload to the customer's own webhook
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             await client.post(customer.customer_webhook_url, json=payload)
     except httpx.RequestError as e:
         print(f"❌ Failed to forward to {customer.customer_webhook_url}: {e}")
