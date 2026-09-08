@@ -7,16 +7,24 @@ from database import get_db
 from models import WhatsAppCustomer
 from utils import generate_pin
 import meta_client
+import datetime
 
 router = APIRouter(prefix="/api/whatsapp", tags=["whatsapp"])
 
+
+
 @router.post("/exchange-code")
 async def exchange_code(payload: ExchangeCodeRequest, db: AsyncSession = Depends(get_db)):
-    access_token = await meta_client.get_access_token(payload.code)
+    short_lived_token = await meta_client.get_access_token(payload.code)
+
+    # Exchange for a long-lived token
+    long_lived_data = await meta_client.get_long_lived_token(short_lived_token)
+    access_token = long_lived_data["access_token"]
+    expires_in_seconds = long_lived_data.get("expires_in", 60 * 24 * 3600)  # fallback ~60 days
+    expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=expires_in_seconds)
 
     pin = "000000"
 
-    # Registration may fail if the number is already registered — don't let that block onboarding
     try:
         register_result = await meta_client.register_phone_number(
             phone_number_id=payload.phone_number_id,
@@ -39,6 +47,7 @@ async def exchange_code(payload: ExchangeCodeRequest, db: AsyncSession = Depends
     if existing:
         existing.phone_number_id = payload.phone_number_id
         existing.access_token = access_token
+        existing.token_expires_at = expires_at
         existing.pin_code = pin
         existing.status = "active"
     else:
@@ -46,6 +55,7 @@ async def exchange_code(payload: ExchangeCodeRequest, db: AsyncSession = Depends
             waba_id=payload.waba_id,
             phone_number_id=payload.phone_number_id,
             access_token=access_token,
+            token_expires_at=expires_at,
             pin_code=pin,
             status="active",
         )
@@ -57,6 +67,7 @@ async def exchange_code(payload: ExchangeCodeRequest, db: AsyncSession = Depends
         "success": True,
         "waba_id": payload.waba_id,
         "phone_number_id": payload.phone_number_id,
+        "token_expires_at": expires_at.isoformat(),
         "register_result": register_result,
         "subscribe_result": subscribe_result,
     }

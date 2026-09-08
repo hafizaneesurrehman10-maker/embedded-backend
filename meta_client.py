@@ -57,3 +57,25 @@ async def subscribe_app_to_waba(waba_id: str, access_token: str) -> dict:
         raise HTTPException(status_code=resp.status_code, detail=resp.json())
 
     return resp.json()
+
+
+async def get_long_lived_token(short_lived_token: str) -> dict:
+    """Exchange a short-lived token for a long-lived one (~60 days)."""
+    url = f"{GRAPH_API_BASE}/oauth/access_token"
+    params = {
+        "grant_type": "fb_exchange_token",
+        "client_id": META_APP_ID,
+        "client_secret": META_APP_SECRET,
+        "fb_exchange_token": short_lived_token,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            resp = await client.get(url, params=params)
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=502, detail=f"Meta API request failed: {str(e)}")
+
+    if resp.status_code != 200:
+        raise HTTPException(status_code=resp.status_code, detail=resp.json())
+
+    return resp.json()  # contains access_token, token_type, expires_in
