@@ -15,3 +15,11 @@ class WhatsAppCustomer(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     customer_webhook_url = Column(String, nullable=True)
     api_key = Column(String, unique=True, nullable=True)
+
+
+class ProcessedMessage(Base):
+    __tablename__ = "processed_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    wamid = Column(String, unique=True, index=True, nullable=False)
+    processed_at = Column(DateTime(timezone=True), server_default=func.now())
