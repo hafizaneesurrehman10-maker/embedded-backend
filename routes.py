@@ -67,3 +67,20 @@ async def subscribe_waba(payload: SubscribeWabaRequest):
     return await meta_client.subscribe_app_to_waba(
         payload.waba_id, payload.access_token
     )
+
+
+@router.get("/customers")
+async def list_customers(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(WhatsAppCustomer))
+    customers = result.scalars().all()
+    return [
+        {
+            "id": c.id,
+            "waba_id": c.waba_id,
+            "phone_number_id": c.phone_number_id,
+            "business_name": c.business_name,
+            "status": c.status,
+            "created_at": c.created_at,
+        }
+        for c in customers
+    ]
