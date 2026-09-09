@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-
+from fastapi import Header
 from schemas import ExchangeCodeRequest
 from database import get_db
 from models import WhatsAppCustomer
 import meta_client
+from schemas import SendMessageRequest
+from fastapi import HTTPException
+
 
 router = APIRouter(prefix="/api/whatsapp", tags=["whatsapp"])
 
@@ -71,3 +74,27 @@ async def list_customers(db: AsyncSession = Depends(get_db)):
         }
         for c in customers
     ]
+
+
+
+@router.post("/send")
+async def send_message(
+    payload: SendMessageRequest,
+    x_api_key: str = Header(...),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(WhatsAppCustomer).where(WhatsAppCustomer.api_key == x_api_key)
+    )
+    customer = result.scalar_one_or_none()
+
+    if not customer:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    send_result = await meta_client.send_message(
+        phone_number_id=customer.phone_number_id,
+        to=payload.to,
+        body_text=payload.message,
+    )
+
+    return {"success": True, "result": send_result}
