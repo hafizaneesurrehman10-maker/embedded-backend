@@ -5,6 +5,7 @@ from sqlalchemy import select
 from schemas import ExchangeCodeRequest, RegisterPhoneRequest, SubscribeWabaRequest
 from database import get_db
 from models import WhatsAppCustomer
+from utils import generate_pin
 import meta_client
 
 router = APIRouter(prefix="/api/whatsapp", tags=["whatsapp"])
@@ -14,10 +15,12 @@ router = APIRouter(prefix="/api/whatsapp", tags=["whatsapp"])
 async def exchange_code(payload: ExchangeCodeRequest, db: AsyncSession = Depends(get_db)):
     access_token = await meta_client.get_access_token(payload.code)
 
+    pin = generate_pin()
+
     register_result = await meta_client.register_phone_number(
         phone_number_id=payload.phone_number_id,
         access_token=access_token,
-        pin="000000",  # TODO: replace with real per-customer PIN (Step 4)
+        pin=pin,
     )
 
     subscribe_result = await meta_client.subscribe_app_to_waba(
@@ -25,7 +28,6 @@ async def exchange_code(payload: ExchangeCodeRequest, db: AsyncSession = Depends
         access_token=access_token,
     )
 
-    # Check if this WABA already has a record (re-onboarding case)
     result = await db.execute(
         select(WhatsAppCustomer).where(WhatsAppCustomer.waba_id == payload.waba_id)
     )
@@ -34,12 +36,14 @@ async def exchange_code(payload: ExchangeCodeRequest, db: AsyncSession = Depends
     if existing:
         existing.phone_number_id = payload.phone_number_id
         existing.access_token = access_token
+        existing.pin_code = pin
         existing.status = "active"
     else:
         new_customer = WhatsAppCustomer(
             waba_id=payload.waba_id,
             phone_number_id=payload.phone_number_id,
             access_token=access_token,
+            pin_code=pin,
             status="active",
         )
         db.add(new_customer)
