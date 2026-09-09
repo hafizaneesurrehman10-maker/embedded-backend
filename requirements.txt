@@ -3,3 +3,6 @@ uvicorn
 httpx 
 python-dotenv
 requests
+sqlalchemy
+asyncpg
+psycopg2-binary
