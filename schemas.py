@@ -20,3 +20,8 @@ class SubscribeWabaRequest(BaseModel):
 class SendMessageRequest(BaseModel):
     to: str
     message: str
+
+
+class UpdateWebhookRequest(BaseModel):
+    webhook_url: str
+
