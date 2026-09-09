@@ -2,11 +2,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import Header
-from schemas import ExchangeCodeRequest
+from schemas import ExchangeCodeRequest, SendMessageRequest
 from database import get_db
 from models import WhatsAppCustomer
 import meta_client
-from schemas import SendMessageRequest
 from fastapi import HTTPException
 
 

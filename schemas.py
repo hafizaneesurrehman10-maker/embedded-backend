@@ -16,3 +16,7 @@ class RegisterPhoneRequest(BaseModel):
 class SubscribeWabaRequest(BaseModel):
     waba_id: str
     access_token: str
+
+class SendMessageRequest(BaseModel):
+    to: str
+    message: str
